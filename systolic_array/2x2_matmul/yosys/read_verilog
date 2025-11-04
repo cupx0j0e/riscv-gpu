@@ -1,0 +1,29 @@
+
+ /----------------------------------------------------------------------------\
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |  Copyright (C) 2012 - 2025  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |  Distributed under an ISC-like license, type "license" to see terms        |
+ \----------------------------------------------------------------------------/
+ Yosys 0.58+86 (git sha1 3b9f06c13, g++ 11.4.0-1ubuntu1~22.04.2 -fPIC -O3)
+
+-- Parsing `mac_pe.v' using frontend ` -vlog2k' --
+
+1. Executing Verilog-2005 frontend: mac_pe.v
+Parsing Verilog input from `mac_pe.v' to AST representation.
+verilog frontend filename mac_pe.v
+Storing AST representation for module `$abstract\pe'.
+Successfully finished Verilog frontend.
+
+-- Parsing `systolic_array.v' using frontend ` -vlog2k' --
+
+2. Executing Verilog-2005 frontend: systolic_array.v
+Parsing Verilog input from `systolic_array.v' to AST representation.
+verilog frontend filename systolic_array.v
+Storing AST representation for module `$abstract\systolic_array'.
+Successfully finished Verilog frontend.
+[?2004h
+yosys> [Kyosys> [Kyosys> 
+[?2004l[?2004h
+yosys> 
+[?2004l[?2004h
+yosys> ^C[?2004l
