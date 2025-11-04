@@ -104,7 +104,6 @@ module systolic_array_tb;
         $finish;
     end
     
-    // Monitor signals for debugging
     initial begin
         $display("\n Time | rst | a1  a2 | b1  b2 | c11  c12  c21  c22");
         $display("------|-----|--------|--------|-------------------------");
