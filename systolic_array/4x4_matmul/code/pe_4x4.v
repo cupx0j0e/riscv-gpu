@@ -3,7 +3,7 @@ module pe (
     input rst,
     input [7:0] a_in,
     input [7:0] b_in,
-    output reg [15:0] c
+    output reg [31:0] c
 );
     always @(posedge clk or posedge rst) begin
         if (rst) begin
