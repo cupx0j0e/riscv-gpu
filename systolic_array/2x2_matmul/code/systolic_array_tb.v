@@ -2,9 +2,9 @@
 
 module systolic_array_tb;
     reg clk, rst;
-    reg [7:0] a1, a2;  
-    reg [7:0] b1, b2; 
-    wire [15:0] c11, c12, c21, c22;
+    reg signed [7:0] a1, a2;  
+    reg signed [7:0] b1, b2; 
+    wire signed [17:0] c11, c12, c21, c22;
 
     systolic_array dut (
         .clk(clk),
@@ -39,21 +39,31 @@ module systolic_array_tb;
         $display("Expected C = [19 22]\n             [43 50]");
         $display("========================================\n");
         
-        // cycle 1
-        @(posedge clk);
-        a1 = 8'd1; a2 = 8'd3;
-        b1 = 8'd5; b2 = 8'd6;
+        // Cycle 1
+	@(posedge clk);
+	a1 = 1;  b1 = 5;
+	a2 = 0;  b2 = 0;
 
-        // cycle 2
-        @(posedge clk);
-        a1 = 8'd2; a2 = 8'd4;
-        b1 = 8'd7; b2 = 8'd8;
+	// Cycle 2
+	@(posedge clk);
+	a1 = 2;  b1 = 7;
+	a2 = 3;  b2 = 6;
 
-        // flush out data
-        @(posedge clk);
-        a1 = 0; a2 = 0;
-        b1 = 0; b2 = 0;
+	// Cycle 3
+	@(posedge clk);
+	a1 = 0;  b1 = 0;
+	a2 = 4;  b2 = 8;
 
+	// flush out data completely 
+	@(posedge clk);
+	a1 = 0;  b1 = 0;
+	a2 = 0;  b2 = 0;
+
+	// waiting for computation to get over
+	repeat (3) @(posedge clk);
+
+
+        
         
         $display("\n========================================");
         $display("Final Results at T=%0t ns:", $time);
