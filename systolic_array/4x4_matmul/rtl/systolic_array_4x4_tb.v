@@ -26,6 +26,11 @@ module systolic_array_4x4_tb;
     end
 
     initial begin
+    $dumpfile("wave.vcd");  
+    $dumpvars(0, systolic_array_4x4_tb);  
+    end
+
+    initial begin
 
         rst = 1;
 

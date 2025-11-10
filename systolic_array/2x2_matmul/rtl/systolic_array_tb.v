@@ -25,6 +25,11 @@ module systolic_array_tb;
     end
 
     initial begin
+    $dumpfile("wave.vcd"); 
+    $dumpvars(0, systolic_array_tb);  
+    end
+    
+    initial begin
 
         rst = 1;
         a1 = 0; a2 = 0;
