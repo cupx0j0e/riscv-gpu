@@ -2,7 +2,7 @@
 
 module systolic_array_4x4_tb;
 
-    reg clk, rst;
+    reg clk, rst, clear;
     reg signed [7:0] a1, a2, a3, a4;
     reg signed [7:0] b1, b2, b3, b4;
     wire signed [31:0] c11, c12, c13, c14;
@@ -11,7 +11,7 @@ module systolic_array_4x4_tb;
     wire signed [31:0] c41, c42, c43, c44;
 
     systolic_array_4x4 dut(
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst), .clear(clear),
         .a1(a1), .a2(a2), .a3(a3), .a4(a4),
         .b1(b1), .b2(b2), .b3(b3), .b4(b4),
         .c11(c11), .c12(c12), .c13(c13), .c14(c14),
@@ -33,12 +33,18 @@ module systolic_array_4x4_tb;
     initial begin
 
         rst = 1;
+        clear = 0;
 
         a1=0; a2=0; a3=0; a4=0;
         b1=0; b2=0; b3=0; b4=0;
         
         #10 rst = 0;
-        #15;
+        
+        // clearing all c values 
+        @(posedge clk);
+        clear = 1;   // zero all c values
+        @(posedge clk);
+        clear = 0;   // release clear
 
 	// cycle 1
 	@(posedge clk);
@@ -89,6 +95,10 @@ module systolic_array_4x4_tb;
         b1=0; b2=0; b3=0; b4=0;
         
         repeat (10) @(posedge clk);
+        
+        // clearing all c values 
+	@(posedge clk);
+        clear = 1;
             
         $display("\n========================================");
         $display("Final Results at T=%0t ns:", $time);

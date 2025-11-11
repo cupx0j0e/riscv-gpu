@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module systolic_array_tb;
-    reg clk, rst;
+    reg clk, rst, clear;
     reg signed [7:0] a1, a2;  
     reg signed [7:0] b1, b2; 
     wire signed [17:0] c11, c12, c21, c22;
@@ -9,6 +9,7 @@ module systolic_array_tb;
     systolic_array dut (
         .clk(clk),
         .rst(rst),
+        .clear(clear),
         .a1(a1),  
         .a2(a2),
         .b1(b1),   
@@ -32,11 +33,18 @@ module systolic_array_tb;
     initial begin
 
         rst = 1;
+        clear = 0;
+        
         a1 = 0; a2 = 0;
         b1 = 0; b2 = 0;
         
         #10 rst = 0;
-        #15;
+        
+        // clearing all c values 
+        @(posedge clk);
+        clear = 1;   // zero all c values
+        @(posedge clk);
+        clear = 0;   // release clear
         
         $display("\n========================================");
         $display("Starting Matrix Multiplication Test");
@@ -66,10 +74,11 @@ module systolic_array_tb;
 
 	// waiting for computation to get over
 	repeat (3) @(posedge clk);
+	
+	// clearing all c values 
+	@(posedge clk);
+        clear = 1;  
 
-
-        
-        
         $display("\n========================================");
         $display("Final Results at T=%0t ns:", $time);
         $display("========================================");

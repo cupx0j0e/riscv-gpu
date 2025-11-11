@@ -1,0 +1,300 @@
+$date
+	Tue Nov 11 21:26:54 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module systolic_array_tb $end
+$var wire 18 ! c22 [17:0] $end
+$var wire 18 " c21 [17:0] $end
+$var wire 18 # c12 [17:0] $end
+$var wire 18 $ c11 [17:0] $end
+$var reg 8 % a1 [7:0] $end
+$var reg 8 & a2 [7:0] $end
+$var reg 8 ' b1 [7:0] $end
+$var reg 8 ( b2 [7:0] $end
+$var reg 1 ) clear $end
+$var reg 1 * clk $end
+$var reg 1 + rst $end
+$scope module dut $end
+$var wire 8 , a1 [7:0] $end
+$var wire 8 - a2 [7:0] $end
+$var wire 8 . b1 [7:0] $end
+$var wire 8 / b2 [7:0] $end
+$var wire 1 ) clear $end
+$var wire 1 * clk $end
+$var wire 1 + rst $end
+$var wire 18 0 c22 [17:0] $end
+$var wire 18 1 c21 [17:0] $end
+$var wire 18 2 c12 [17:0] $end
+$var wire 18 3 c11 [17:0] $end
+$var wire 8 4 b12_to_22 [7:0] $end
+$var wire 8 5 b11_to_21 [7:0] $end
+$var wire 8 6 a21_to_22 [7:0] $end
+$var wire 8 7 a11_to_12 [7:0] $end
+$scope module pe11 $end
+$var wire 8 8 a_in [7:0] $end
+$var wire 8 9 b_in [7:0] $end
+$var wire 1 ) clear $end
+$var wire 1 * clk $end
+$var wire 1 + rst $end
+$var reg 8 : a_out [7:0] $end
+$var reg 8 ; b_out [7:0] $end
+$var reg 18 < c [17:0] $end
+$upscope $end
+$scope module pe12 $end
+$var wire 8 = a_in [7:0] $end
+$var wire 8 > b_in [7:0] $end
+$var wire 1 ) clear $end
+$var wire 1 * clk $end
+$var wire 1 + rst $end
+$var reg 8 ? a_out [7:0] $end
+$var reg 8 @ b_out [7:0] $end
+$var reg 18 A c [17:0] $end
+$upscope $end
+$scope module pe21 $end
+$var wire 8 B a_in [7:0] $end
+$var wire 8 C b_in [7:0] $end
+$var wire 1 ) clear $end
+$var wire 1 * clk $end
+$var wire 1 + rst $end
+$var reg 8 D a_out [7:0] $end
+$var reg 8 E b_out [7:0] $end
+$var reg 18 F c [17:0] $end
+$upscope $end
+$scope module pe22 $end
+$var wire 8 G a_in [7:0] $end
+$var wire 8 H b_in [7:0] $end
+$var wire 1 ) clear $end
+$var wire 1 * clk $end
+$var wire 1 + rst $end
+$var reg 8 I a_out [7:0] $end
+$var reg 8 J b_out [7:0] $end
+$var reg 18 K c [17:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b0 K
+b0 J
+b0 I
+b0 H
+b0 G
+b0 F
+b0 E
+b0 D
+b0 C
+b0 B
+b0 A
+b0 @
+b0 ?
+b0 >
+b0 =
+b0 <
+b0 ;
+b0 :
+b0 9
+b0 8
+b0 7
+b0 6
+b0 5
+b0 4
+b0 3
+b0 2
+b0 1
+b0 0
+b0 /
+b0 .
+b0 -
+b0 ,
+1+
+0*
+0)
+b0 (
+b0 '
+b0 &
+b0 %
+b0 $
+b0 #
+b0 "
+b0 !
+$end
+#5000
+1*
+#10000
+0*
+0+
+#15000
+1)
+1*
+#20000
+0*
+#25000
+0)
+1*
+#30000
+0*
+#35000
+b101 5
+b101 ;
+b101 C
+b1 7
+b1 :
+b1 =
+b101 $
+b101 3
+b101 <
+b101 '
+b101 .
+b101 9
+b1 %
+b1 ,
+b1 8
+1*
+#40000
+0*
+#45000
+b101 E
+b11 6
+b11 D
+b11 G
+b1111 "
+b1111 1
+b1111 F
+b110 4
+b110 @
+b110 H
+b1 ?
+b110 #
+b110 2
+b110 A
+b111 5
+b111 ;
+b111 C
+b10 7
+b10 :
+b10 =
+b10011 $
+b10011 3
+b10011 <
+b110 (
+b110 /
+b110 >
+b11 &
+b11 -
+b11 B
+b111 '
+b111 .
+b111 9
+b10 %
+b10 ,
+b10 8
+1*
+#50000
+0*
+#55000
+b0 5
+b0 ;
+b0 C
+b0 7
+b0 :
+b0 =
+b1000 4
+b1000 @
+b1000 H
+b10 ?
+b10110 #
+b10110 2
+b10110 A
+b111 E
+b100 6
+b100 D
+b100 G
+b101011 "
+b101011 1
+b101011 F
+b110 J
+b11 I
+b10010 !
+b10010 0
+b10010 K
+b1000 (
+b1000 /
+b1000 >
+b100 &
+b100 -
+b100 B
+b0 '
+b0 .
+b0 9
+b0 %
+b0 ,
+b0 8
+1*
+#60000
+0*
+#65000
+b1000 J
+b100 I
+b110010 !
+b110010 0
+b110010 K
+b0 E
+b0 6
+b0 D
+b0 G
+b0 4
+b0 @
+b0 H
+b0 ?
+b0 (
+b0 /
+b0 >
+b0 &
+b0 -
+b0 B
+1*
+#70000
+0*
+#75000
+b0 J
+b0 I
+1*
+#80000
+0*
+#85000
+1*
+#90000
+0*
+#95000
+1*
+#100000
+0*
+#105000
+b0 !
+b0 0
+b0 K
+b0 "
+b0 1
+b0 F
+b0 #
+b0 2
+b0 A
+b0 $
+b0 3
+b0 <
+1)
+1*
+#110000
+0*
+#115000
+1*
+#120000
+0*
+#125000
+1*
