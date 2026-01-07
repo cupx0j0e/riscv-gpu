@@ -131,6 +131,12 @@ module sys_ctrl_user #(
                       (write_idx==8)?c31:(write_idx==9)?c32:(write_idx==10)?c33:(write_idx==11)?c34:
                       (write_idx==12)?c41:(write_idx==13)?c42:(write_idx==14)?c43:(write_idx==15)?c44:32'd0;
 
+  // Combinational drive for C write address/data (word index -> byte address).
+  always @* begin
+    bram_c_addrb = (write_idx << 2);
+    bram_c_dinb  = c_sel;
+  end
+
   systolic_array_4x4 u_array (
     .clk(s_axi_aclk),
     .rst(~s_axi_aresetn),
@@ -147,7 +153,7 @@ module sys_ctrl_user #(
     if (!s_axi_aresetn) begin
       start_d <= 0; done_reg <= 0; busy_reg <= 0;
       state <= ST_IDLE; stream_cnt <= 0; flush_cnt <= 0; write_idx <= 0;
-      a_addr <= 0; b_addr <= 0; bram_c_addrb <= 0; bram_c_dinb <= 0;
+      a_addr <= 0; b_addr <= 0;
     end else begin
       start_d <= slv_reg0[0];
       case (state)
@@ -155,7 +161,7 @@ module sys_ctrl_user #(
           done_reg <= 0; busy_reg <= 0; stream_cnt <= 0; flush_cnt <= 0; write_idx <= 0;
           if (start_pulse) begin
             busy_reg <= 1;
-            a_addr <= 0; b_addr <= 0; bram_c_addrb <= 0;
+            a_addr <= 0; b_addr <= 0;
             state <= ST_CLEAR;
           end
         end
@@ -174,8 +180,6 @@ module sys_ctrl_user #(
           end else flush_cnt <= flush_cnt + 1;
         end
         ST_WRITE: begin
-          bram_c_dinb <= c_sel;
-          bram_c_addrb <= write_idx[BRAM_ADDR_WIDTH-1:0];
           if (write_idx == 5'd15) begin
             write_idx <= 0; state <= ST_DONE;
           end else write_idx <= write_idx + 1;
@@ -184,7 +188,7 @@ module sys_ctrl_user #(
           done_reg <= 1; busy_reg <= 0;
           if (start_pulse) begin
             done_reg <= 0; busy_reg <= 1;
-            a_addr <= 0; b_addr <= 0; bram_c_addrb <= 0; write_idx <= 0;
+            a_addr <= 0; b_addr <= 0; write_idx <= 0;
             state <= ST_CLEAR;
           end
         end
@@ -192,8 +196,9 @@ module sys_ctrl_user #(
     end
   end
 
-  assign bram_a_addrb = a_addr;
-  assign bram_b_addrb = b_addr;
+  // BRAM ports are byte addressed; shift by 2 to select 32-bit words.
+  assign bram_a_addrb = a_addr << 2;
+  assign bram_b_addrb = b_addr << 2;
   assign bram_a_enb   = (state==ST_STREAM);
   assign bram_b_enb   = (state==ST_STREAM);
   assign bram_c_enb   = (state==ST_WRITE);
