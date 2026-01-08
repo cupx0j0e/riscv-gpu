@@ -1,0 +1,9 @@
+*.jou
+*.log
+systolic_array/4x4_matmul/rtl/ip_repo
+systolic_array/4x4_matmul/rtl/_ide
+*.str
+systolic_array/4x4_matmul/rtl/sysarray_arty
+__pycache__
+.Xil
+*.json
