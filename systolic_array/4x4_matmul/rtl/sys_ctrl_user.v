@@ -114,12 +114,14 @@ module sys_ctrl_user #(
   reg [BRAM_ADDR_WIDTH-1:0] a_addr, b_addr;
   reg [4:0] write_idx;
   reg [15:0] stream_cnt, flush_cnt;
+  reg [15:0] tile_idx;
   reg [2:0] state;
   localparam ST_IDLE=0, ST_CLEAR=1, ST_STREAM=2, ST_FLUSH=3, ST_WRITE=4, ST_DONE=5;
   wire start_pulse = slv_reg0[0] & ~start_d;
   wire clear_bit   = slv_reg0[1];
   wire [15:0] stream_len = (slv_reg2[15:0]!=0) ? slv_reg2[15:0] : 16'd8;
   wire [15:0] flush_len  = (slv_reg3[15:0]!=0) ? slv_reg3[15:0] : 16'd8;
+  wire [15:0] tile_count = (slv_reg3[31:16]!=0) ? slv_reg3[31:16] : 16'd1;
 
   wire signed [7:0] a1 = bram_a_doutb[7:0],  a2 = bram_a_doutb[15:8],
                     a3 = bram_a_doutb[23:16],a4 = bram_a_doutb[31:24];
@@ -133,7 +135,7 @@ module sys_ctrl_user #(
 
   // Combinational drive for C write address/data (word index -> byte address).
   always @* begin
-    bram_c_addrb = (write_idx << 2);
+    bram_c_addrb = ((tile_idx * 16 + write_idx) << 2);
     bram_c_dinb  = c_sel;
   end
 
@@ -153,12 +155,12 @@ module sys_ctrl_user #(
     if (!s_axi_aresetn) begin
       start_d <= 0; done_reg <= 0; busy_reg <= 0;
       state <= ST_IDLE; stream_cnt <= 0; flush_cnt <= 0; write_idx <= 0;
-      a_addr <= 0; b_addr <= 0;
+      a_addr <= 0; b_addr <= 0; tile_idx <= 0;
     end else begin
       start_d <= slv_reg0[0];
       case (state)
         ST_IDLE: begin
-          done_reg <= 0; busy_reg <= 0; stream_cnt <= 0; flush_cnt <= 0; write_idx <= 0;
+          done_reg <= 0; busy_reg <= 0; stream_cnt <= 0; flush_cnt <= 0; write_idx <= 0; tile_idx <= 0;
           if (start_pulse) begin
             busy_reg <= 1;
             a_addr <= 0; b_addr <= 0;
@@ -181,14 +183,21 @@ module sys_ctrl_user #(
         end
         ST_WRITE: begin
           if (write_idx == 5'd15) begin
-            write_idx <= 0; state <= ST_DONE;
+            write_idx <= 0;
+            if (tile_idx >= tile_count-1) begin
+              state <= ST_DONE;
+            end else begin
+              tile_idx <= tile_idx + 1;
+              a_addr <= 0; b_addr <= 0;
+              state <= ST_CLEAR;
+            end
           end else write_idx <= write_idx + 1;
         end
         ST_DONE: begin
           done_reg <= 1; busy_reg <= 0;
           if (start_pulse) begin
             done_reg <= 0; busy_reg <= 1;
-            a_addr <= 0; b_addr <= 0; write_idx <= 0;
+            a_addr <= 0; b_addr <= 0; write_idx <= 0; tile_idx <= 0;
             state <= ST_CLEAR;
           end
         end
@@ -197,8 +206,10 @@ module sys_ctrl_user #(
   end
 
   // BRAM ports are byte addressed; shift by 2 to select 32-bit words.
-  assign bram_a_addrb = a_addr << 2;
-  assign bram_b_addrb = b_addr << 2;
+  wire [BRAM_ADDR_WIDTH-1:0] a_base = tile_idx * stream_len;
+  wire [BRAM_ADDR_WIDTH-1:0] b_base = tile_idx * stream_len;
+  assign bram_a_addrb = (a_base + a_addr) << 2;
+  assign bram_b_addrb = (b_base + b_addr) << 2;
   assign bram_a_enb   = (state==ST_STREAM);
   assign bram_b_enb   = (state==ST_STREAM);
   assign bram_c_enb   = (state==ST_WRITE);

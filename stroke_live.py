@@ -121,11 +121,19 @@ def main(argv):
                                 try:
                                     if use_tiny:
                                         dx, dy = features_dxdy(points_norm)
-                                        dxdy_q = quantize_dxdy(dx, dy, tiny_model.in_scale)
+                                        dxdy_q = quantize_dxdy(dx, dy, tiny_model.in_scale, tiny_model.zero_point)
                                         res_logits, pred_idx = run_tinytiny_linear(client, dxdy_q, tiny_model)
                                         pred_label = "horizontal" if pred_idx == 0 else "vertical"
                                     elif use_mnist:
-                                        gridm = render_stroke_to_grid(points_norm, grid=mnist_model.grid_size, thickness=2, blur=True)
+                                        gridm = render_stroke_to_grid(
+                                            points_norm,
+                                            grid=mnist_model.grid_size,
+                                            thickness=2,
+                                            supersample=8,
+                                            border_frac=0.1,
+                                            intensity_step=255,
+                                            center_canvas=True,
+                                        )
                                         res_logits, pred_idx = run_mnist_int8(client, gridm, mnist_model)
                                         pred_label = str(pred_idx)
                                     else:

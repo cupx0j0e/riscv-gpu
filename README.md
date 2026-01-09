@@ -64,6 +64,19 @@ make
 
 The Makefiles typically run `iverilog` to produce a `sim.vvp` binary and then run `vvp sim.vvp` producing `wave.vcd`; open that VCD with `gtkwave wave.vcd`.
 
+Systolic UART firmware + MNIST helpers (branch notes)
+------------------------------------------------------
+- Firmware: multi-tile UART RPC lives in `systolic_array/4x4_matmul/rtl/firmware/bare_metal/src/firmware.c` (and `test.c`). Build the bare-metal image with:
+  - `cd systolic_array/4x4_matmul/rtl/firmware/bare_metal/build && ninja`
+  - Program the bitstream and `bare_metal.elf` via your usual Vitis/xsct flow.
+- Python clients (install: `pip install pyserial pygame torch torchvision`):
+  - Run a real MNIST test image over UART (no UI): `python systolic_array/4x4_matmul/rtl/firmware/bare_metal/src/test_mnist_image.py --port /dev/ttyUSB1 --baud 230400 --mnist-json mnist_int8.json --idx 0`
+  - CPU-only reference (no hardware) to compare logits: `python systolic_array/4x4_matmul/rtl/firmware/bare_metal/src/check_mnist_cpu.py --json mnist_int8.json --idx 0`
+  - UI / grid dump: `python mnist_draw.py --port /dev/ttyUSB1 --baud 230400 --no-setlen --mnist-json mnist_int8.json --mnist-idx 0`
+    - Writes the exact 14×14 grid sent to hardware into `grid_dump.txt` (CSV rows). Omit `--mnist-idx` to draw freehand instead.
+  - Stroke demo with direct MNIST image (no drawing): `python stroke_demo.py --mnist-json mnist_int8.json --mnist-idx 0 --port /dev/ttyUSB1 --baud 230400`
+- UART defaults: firmware prints a banner on boot; if you see stray characters, flush the RX buffer before sending commands. 230400 baud is recommended for these scripts.
+
 Design notes
 -------------
 - Systolic arrays are used here as a compute substrate for dense matrix multiply (GEMM). They demonstrate dataflow-style mapping of compute to constant-mesh PE arrays and are a common accelerator building block in GPUs.

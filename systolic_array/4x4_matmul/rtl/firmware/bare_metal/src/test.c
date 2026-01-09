@@ -28,6 +28,8 @@
 #define STATUS_BADLEN 0xEE
 #define STATUS_BADOP  0xEF
 
+#define MAX_TILE_COUNT 32
+
 static inline void write_reg(u32 off, u32 val) { Xil_Out32(SYS_CTRL_BASE + off, val); }
 static inline u32  read_reg(u32 off)          { return Xil_In32(SYS_CTRL_BASE + off); }
 #if HAS_XGPIO
@@ -161,6 +163,8 @@ int main(void) {
     u32 mat_b[16] = {0};
     u16 stream_len = 8;
     u16 flush_len  = 10;
+    u16 tile_count = 1;
+    int tile_count_locked = 0; // locked when caller provides explicit tile_count
 
     while (1) {
         u8 hdr[2];
@@ -174,49 +178,109 @@ int main(void) {
             uart_send_byte(STATUS_OK);
             break;
         case OPC_SET_LEN:
-            if (len != 4) { uart_send_byte(STATUS_BADLEN); break; }
+            if (len != 4 && len != 6) { uart_send_byte(STATUS_BADLEN); break; }
             {
-                u8 buf[4];
-                uart_recv_buf(buf, 4);
+                u8 buf[6];
+                uart_recv_buf(buf, len);
                 stream_len = (u16)get_u32le(buf);      // lower 16 bits
                 flush_len  = (u16)(get_u32le(buf) >> 16);
+                if (len == 6) {
+                    tile_count = ((u16)buf[4]) | ((u16)buf[5] << 8);
+                    if (tile_count == 0 || tile_count > MAX_TILE_COUNT) { uart_send_byte(STATUS_BADLEN); break; }
+                    tile_count_locked = 1;
+                } else {
+                    tile_count = 1;
+                    tile_count_locked = 0;
+                }
                 uart_send_byte(STATUS_OK);
             }
             break;
         case OPC_LOAD_A:
-            if (len != 64) { uart_send_byte(STATUS_BADLEN); break; }
+            if (len == 0 || (len % 64) != 0 || len/64 > MAX_TILE_COUNT) { uart_send_byte(STATUS_BADLEN); break; }
             {
+                if (stream_len < 8) { uart_send_byte(STATUS_BADLEN); break; }
+                int words = len / 4;
                 u8 buf[64];
-                uart_recv_buf(buf, 64);
-                for (int i = 0; i < 16; i++) mat_a[i] = get_u32le(&buf[i*4]);
+                u32 tile_mat[16];
+                u32 packed[8];
+                int tile_idx = 0;
+                for (int off = 0; off < words; off += 16, tile_idx++) {
+                    uart_recv_buf(buf, 64);
+                    for (int i = 0; i < 16; i++) {
+                        tile_mat[i] = get_u32le(&buf[i*4]);
+                        if (off == 0) mat_a[i] = tile_mat[i];
+                    }
+                    pack_a_words(tile_mat, packed);
+                    for (int t = 0; t < stream_len; t++) {
+                        u32 v = (t < 8) ? packed[t] : 0;
+                        Xil_Out32(BRAM_A_BASE + (tile_idx * stream_len + t)*4, v);
+                    }
+                }
+                // Infer tile_count from payload if not explicitly set >1; otherwise validate.
+                int payload_tiles = len / 64;
+                if (payload_tiles > 0) {
+                    if (tile_count_locked) {
+                        if (payload_tiles != tile_count) { uart_send_byte(STATUS_BADLEN); break; }
+                    } else {
+                        tile_count = (u16)payload_tiles;
+                    }
+                }
+                Xil_DCacheFlushRange(BRAM_A_BASE, tile_count * stream_len * 4);
                 uart_send_byte(STATUS_OK);
             }
             break;
         case OPC_LOAD_B:
-            if (len != 64) { uart_send_byte(STATUS_BADLEN); break; }
+            if (len == 0 || (len % 64) != 0 || len/64 > MAX_TILE_COUNT) { uart_send_byte(STATUS_BADLEN); break; }
             {
+                if (stream_len < 8) { uart_send_byte(STATUS_BADLEN); break; }
+                int words = len / 4;
                 u8 buf[64];
-                uart_recv_buf(buf, 64);
-                for (int i = 0; i < 16; i++) mat_b[i] = get_u32le(&buf[i*4]);
+                u32 tile_mat[16];
+                u32 packed[8];
+                int tile_idx = 0;
+                for (int off = 0; off < words; off += 16, tile_idx++) {
+                    uart_recv_buf(buf, 64);
+                    for (int i = 0; i < 16; i++) {
+                        tile_mat[i] = get_u32le(&buf[i*4]);
+                        if (off == 0) mat_b[i] = tile_mat[i];
+                    }
+                    pack_b_words(tile_mat, packed);
+                    for (int t = 0; t < stream_len; t++) {
+                        u32 v = (t < 8) ? packed[t] : 0;
+                        Xil_Out32(BRAM_B_BASE + (tile_idx * stream_len + t)*4, v);
+                    }
+                }
+                int payload_tiles = len / 64;
+                if (payload_tiles > 0) {
+                    if (tile_count_locked) {
+                        if (payload_tiles != tile_count) { uart_send_byte(STATUS_BADLEN); break; }
+                    } else {
+                        tile_count = (u16)payload_tiles;
+                    }
+                }
+                Xil_DCacheFlushRange(BRAM_B_BASE, tile_count * stream_len * 4);
                 uart_send_byte(STATUS_OK);
             }
             break;
         case OPC_RUN:
             if (len != 0) { uart_send_byte(STATUS_BADLEN); break; }
             {
-                u32 a_words[8], b_words[8];
-                pack_a_words(mat_a, a_words);
-                pack_b_words(mat_b, b_words);
+                // If caller didn't preload BRAM directly, fall back to packing single-tile mats.
+                if (tile_count == 1) {
+                    u32 a_words[8], b_words[8];
+                    pack_a_words(mat_a, a_words);
+                    pack_b_words(mat_b, b_words);
 
-                for (int i = 0; i < 8; i++) {
-                    Xil_Out32(BRAM_A_BASE + i*4, a_words[i]);
-                    Xil_Out32(BRAM_B_BASE + i*4, b_words[i]);
+                    for (int i = 0; i < 8; i++) {
+                        Xil_Out32(BRAM_A_BASE + i*4, a_words[i]);
+                        Xil_Out32(BRAM_B_BASE + i*4, b_words[i]);
+                    }
+                    Xil_DCacheFlushRange(BRAM_A_BASE, sizeof(a_words));
+                    Xil_DCacheFlushRange(BRAM_B_BASE, sizeof(b_words));
                 }
-                Xil_DCacheFlushRange(BRAM_A_BASE, sizeof(a_words));
-                Xil_DCacheFlushRange(BRAM_B_BASE, sizeof(b_words));
 
                 write_reg(REG_STREAM_LEN, stream_len);
-                write_reg(REG_FLUSH_LEN,  flush_len);
+                write_reg(REG_FLUSH_LEN,  ((u32)tile_count << 16) | (u32)flush_len);
                 write_reg(REG_CTRL, 0x2); // clear pulse
                 write_reg(REG_CTRL, 0x0);
                 write_reg(REG_CTRL, 0x1); // start
@@ -228,14 +292,16 @@ int main(void) {
         case OPC_READ_C:
             if (len != 0) { uart_send_byte(STATUS_BADLEN); break; }
             {
-                u8 out[1 + 16*4];
-                Xil_DCacheInvalidateRange(BRAM_C_BASE, 16*4);
-                out[0] = STATUS_OK;
-                for (int i = 0; i < 16; i++) {
+                if (tile_count == 0 || tile_count > MAX_TILE_COUNT) { uart_send_byte(STATUS_BADLEN); break; }
+                int total_words = tile_count * 16;
+                Xil_DCacheInvalidateRange(BRAM_C_BASE, total_words*4);
+                uart_send_byte(STATUS_OK);
+                u8 word_bytes[4];
+                for (int i = 0; i < total_words; i++) {
                     u32 v = Xil_In32(BRAM_C_BASE + i*4);
-                    put_u32le(v, &out[1 + i*4]);
+                    put_u32le(v, word_bytes);
+                    uart_send_buf(word_bytes, 4);
                 }
-                uart_send_buf(out, sizeof(out));
             }
             break;
         case OPC_VERSION:

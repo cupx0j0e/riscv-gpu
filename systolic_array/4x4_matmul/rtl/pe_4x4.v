@@ -1,3 +1,4 @@
+(* use_dsp = "yes" *)
 module pe (
     input clk,
     input rst,
@@ -31,4 +32,3 @@ module pe (
     end
     
 endmodule
-

@@ -350,11 +350,11 @@ def load_tinytiny_json(path: str) -> TinyLinearModel:
         raise ValueError("expected weights shape 2x2 in tinytiny JSON")
     # Convert uint8 with zp->int8
     w_int8 = [[int(w_q[r][c]) - zp for c in range(2)] for r in range(2)]
-    # Input scale: map dx/dy in [0,1] to int8
+    # Input scale: map dx/dy in [0,1] to signed int8
     in_scale = 127.0
     # Bias in int32 domain: bias_float * (in_scale * w_scale)
     bias_int = [int(round(b * in_scale * w_scale)) for b in b_f]
-    return TinyLinearModel(w_int8=w_int8, b_int=bias_int, in_scale=in_scale, w_scale=w_scale, zero_point=zp)
+    return TinyLinearModel(w_int8=w_int8, b_int=bias_int, in_scale=in_scale, w_scale=w_scale, zero_point=0)
 
 
 def features_dxdy(points: Sequence[Tuple[float, float]]) -> Tuple[float, float]:
@@ -368,8 +368,10 @@ def features_dxdy(points: Sequence[Tuple[float, float]]) -> Tuple[float, float]:
     return (dx, dy)
 
 
-def quantize_dxdy(dx: float, dy: float, scale: float = 127.0) -> List[int]:
-    return [clamp_int8(dx * scale), clamp_int8(dy * scale)]
+def quantize_dxdy(dx: float, dy: float, scale: float = 127.0, zero_point: int = 0) -> List[int]:
+    qx = int(round(dx * scale)) - zero_point
+    qy = int(round(dy * scale)) - zero_point
+    return [clamp_int8(qx), clamp_int8(qy)]
 
 
 # MNIST int8 export loader (from train_mini_mnist.py)
@@ -609,7 +611,7 @@ def main(argv: Sequence[str]) -> int:
     if use_tiny:
         model = load_tinytiny_json(args.tinytiny_json)
         dx, dy = features_dxdy(pts_norm)
-        dxdy_q = quantize_dxdy(dx, dy, model.in_scale)
+        dxdy_q = quantize_dxdy(dx, dy, model.in_scale, model.zero_point)
         print(f"dx, dy (norm): {dx:.3f}, {dy:.3f}  -> int8 {dxdy_q}")
     elif use_mnist:
         mnist_model = load_mnist_json(args.mnist_json)
